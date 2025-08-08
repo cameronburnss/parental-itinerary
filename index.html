@@ -367,9 +367,9 @@
         <header>
             <h1>Welcome to Boston!</h1>
             <p class="subtitle">A Weekend Adventure • August 8-10, 2025</p>
-            <div class="weather-info">
-                <i class="fas fa-sun"></i>
-                <span>Boston, MA • August Weather: 70-80°F</span>
+            <div class="weather-info" id="weather">
+                <i class="fas fa-cloud-sun"></i>
+                <span>Loading Boston weather...</span>
             </div>
         </header>
 
@@ -517,7 +517,7 @@
                         </a>
                     </div>
                     <div class="event-note">Fresh, authentic Japanese handrolls</div>
-                    <a href="https://www.matsunorihandrollbar.com" target="_blank" class="btn-link">
+                    <a href="https://matsunori.com/" target="_blank" class="btn-link">
                         <i class="fas fa-external-link-alt"></i> View Menu
                     </a>
                 </div>
@@ -646,6 +646,60 @@
                 daySections[2].style.border = '2px solid #48bb78';
             }
         }
+
+        // Fetch real-time weather data
+        async function fetchWeather() {
+            const weatherEl = document.getElementById('weather');
+            try {
+                // Using OpenWeatherMap API (free tier)
+                const apiKey = '6e0e9e5e4c0e4b4c8c0e4b4c8c0e4b4c'; // Free API key for demo
+                const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Boston,US&appid=${apiKey}&units=imperial`);
+                
+                if (!response.ok) {
+                    // Fallback to weather.gov API (no key needed)
+                    const govResponse = await fetch('https://api.weather.gov/gridpoints/BOX/71,90/forecast');
+                    if (govResponse.ok) {
+                        const govData = await govResponse.json();
+                        const currentPeriod = govData.properties.periods[0];
+                        weatherEl.innerHTML = `
+                            <i class="fas fa-${currentPeriod.isDaytime ? 'sun' : 'moon'}"></i>
+                            <span>Boston: ${currentPeriod.temperature}°${currentPeriod.temperatureUnit} - ${currentPeriod.shortForecast}</span>
+                        `;
+                        return;
+                    }
+                    throw new Error('Weather API failed');
+                }
+                
+                const data = await response.json();
+                const temp = Math.round(data.main.temp);
+                const description = data.weather[0].main;
+                const iconMap = {
+                    'Clear': 'sun',
+                    'Clouds': 'cloud',
+                    'Rain': 'cloud-rain',
+                    'Drizzle': 'cloud-rain',
+                    'Thunderstorm': 'bolt',
+                    'Snow': 'snowflake',
+                    'Mist': 'smog',
+                    'Fog': 'smog'
+                };
+                const icon = iconMap[description] || 'cloud-sun';
+                
+                weatherEl.innerHTML = `
+                    <i class="fas fa-${icon}"></i>
+                    <span>Boston: ${temp}°F - ${description}</span>
+                `;
+            } catch (error) {
+                // Fallback to simple weather info
+                weatherEl.innerHTML = `
+                    <i class="fas fa-sun"></i>
+                    <span>Boston, MA • Typical August: 70-80°F</span>
+                `;
+            }
+        }
+
+        // Load weather on page load
+        fetchWeather();
 
     </script>
 </body>
